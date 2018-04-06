@@ -24,7 +24,32 @@ def rank_shapes(dataRDD):
 	shapes = shapeRDD.reduceByKey(lambda a,b: a+b).sort(ascending=False).collect()
 	return shapes
 
-def population_centers(dataRDD):
+def rank_seasons(dataRDD):
+	seasonRDD = dataRDD.map(lambda x: (x['datetime']))
+	seasonRDD = seasonRDD.map(lambda x: x.split(' '))
+	seasonRDD = seasonRDD.map(lambda x: x[0].split('/'))
+	seasonRDD = seasonRDD.map(lambda x: x[0])
+	seasonRDD = seasonRDD.map((get_season, 1))
+	seasons = seasonRDD.reduceByKey(lambda a,b: a+b).sort(ascending=False).collect()
+	return seasons
+
+def get_season(data):
+	return {
+		1 : 'Winter',
+		2 : 'Winter',
+		3 : 'Spring',
+		4 : 'Spring',
+		5 : 'Spring',
+		6 : 'Summer',
+		7 : 'Summer',
+		8 : 'Summer',
+		9 : 'Fall',
+		10 : 'Fall',
+		11 : 'Fall',
+		12 : 'Winter'
+	}[data]
+
+def ufo_beer_run(dataRDD):
 
 
 if __name__ == "__main__":
@@ -40,17 +65,18 @@ lines = spark.read.text(data_file).rdd
 parts = lines.map(lambda row: row.value.split(","))
 ufoRDD = parts.map(lambda x: Row(datetime=x[0], state=x[2], country=x[3], shape=x[4], duration=x[5], comment=x[7], latitude=x[9], longitude=x[10]))
 
-###MAP REDUCE SPECS
+###MAP REDUCE
 	#1 avg duration of sighting
 	#2 geography
 	#3 shape rankings
-	#4 alcohol consumption
+	#4 seasonal rankings
+	#5 alcohol consumption
 ###FREQUENT PATTERNS
-	#5 words used in descriptions
-	#6 locations of sightings
-	#7 time of sightings (season, month, day/night)
+	#6 words used in descriptions
+	#7 locations of sightings
+	#8 time of sightings (season, month, day/night)
 ###CLUSTERING
-	#8 reliable sightings vs unreliable (look at possible features)
-	#9 cluster coordinates
+	#9 reliable sightings vs unreliable (look at possible features)
+	#10 cluster coordinates
 ###MAPS
-	#10 impose lat-lon coordinate map on world?!??!
+	#11 impose lat-lon coordinates on world map?!??!
