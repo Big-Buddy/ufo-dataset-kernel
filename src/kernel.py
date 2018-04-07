@@ -22,14 +22,20 @@ def detect_int_or_float(data):
 			return ('time elapsed', 'broken')
 
 def hemispheres(dataRDD):
-	geographicalRDD = dataRDD.map(lambda x: (float(x['latitude']), float(x['longitude'])))
-	geographicalRDD = geographicalRDD.map()
+	geographicalRDD = dataRDD.map(lambda x: x['latitude'], x['longitude'])
+	geographicalRDD = geographicalRDD.map(detect_float)
+	geographicalRDD = geographicalRDD.filter(lambda x: x != 'broken')
 	no_soRDD = geographicalRDD.map(lambda x: ('north', 1) if x[0] >= 0 else ('south', 1))
 	ea_weRDD = geographicalRDD.map(lambda x: ('east', 1) if x[1] >= 0 else ('west', 1))
-
 	no_so = no_soRDD.reduceByKey(lambda a,b: a+b).collect()
 	ea_we = ea_weRDD.reduceByKey(lambda a,b: a+b).collect()
 	return [no_so, ea_we]
+
+def detect_float(data):
+	try:
+		return (float(data[0]), float(data[1]))
+	except ValueError:
+		return ('broken')
 
 def rank_shapes(dataRDD):
 	shapeRDD = dataRDD.map(lambda x: (x['shape'], 1))
