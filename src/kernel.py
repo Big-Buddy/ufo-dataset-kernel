@@ -22,7 +22,8 @@ def detect_int_or_float(data):
 			return ('time elapsed', 'broken')
 
 def hemispheres(dataRDD):
-	geographicalRDD = dataRDD.map(lambda x: (x['latitude'], x['longitude']))
+	geographicalRDD = dataRDD.map(lambda x: (float(x['latitude']), float(x['longitude'])))
+	geographicalRDD = geographicalRDD.map()
 	no_soRDD = geographicalRDD.map(lambda x: ('north', 1) if x[0] >= 0 else ('south', 1))
 	ea_weRDD = geographicalRDD.map(lambda x: ('east', 1) if x[1] >= 0 else ('west', 1))
 
