@@ -22,7 +22,7 @@ def detect_int_or_float(data):
 			return ('time elapsed', 'broken')
 
 def hemispheres(dataRDD):
-	geographicalRDD = dataRDD.map(lambda x: x['latitude'], x['longitude'])
+	geographicalRDD = dataRDD.map(lambda x: (x['latitude'], x['longitude']))
 	geographicalRDD = geographicalRDD.map(detect_float)
 	geographicalRDD = geographicalRDD.filter(lambda x: x != 'broken')
 	no_soRDD = geographicalRDD.map(lambda x: ('north', 1) if x[0] >= 0 else ('south', 1))
@@ -39,7 +39,7 @@ def detect_float(data):
 
 def rank_shapes(dataRDD):
 	shapeRDD = dataRDD.map(lambda x: (x['shape'], 1))
-	shapes = shapeRDD.reduceByKey(lambda a,b: a+b).sort(ascending=False).collect()
+	shapes = shapeRDD.reduceByKey(lambda a,b: a+b).sortBy(lambda x: x[1], ascending=False).collect()
 	return shapes
 
 def rank_seasons(dataRDD):
@@ -47,24 +47,24 @@ def rank_seasons(dataRDD):
 	seasonRDD = seasonRDD.map(lambda x: x.split(' '))
 	seasonRDD = seasonRDD.map(lambda x: x[0].split('/'))
 	seasonRDD = seasonRDD.map(lambda x: x[0])
-	seasonRDD = seasonRDD.map((get_season, 1))
-	seasons = seasonRDD.reduceByKey(lambda a,b: a+b).sort(ascending=False).collect()
+	seasonRDD = seasonRDD.map(get_season)
+	seasons = seasonRDD.reduceByKey(lambda a,b: a+b).sortBy(lambda x: x[1], ascending=False).collect()
 	return seasons
 
 def get_season(data):
 	return {
-		1 : 'Winter',
-		2 : 'Winter',
-		3 : 'Spring',
-		4 : 'Spring',
-		5 : 'Spring',
-		6 : 'Summer',
-		7 : 'Summer',
-		8 : 'Summer',
-		9 : 'Fall',
-		10 : 'Fall',
-		11 : 'Fall',
-		12 : 'Winter'
+		'1' : ('Winter', 1),
+		'2' : ('Winter', 1),
+		'3' : ('Spring', 1),
+		'4' : ('Spring', 1),
+		'5' : ('Spring', 1),
+		'6' : ('Summer', 1),
+		'7' : ('Summer', 1),
+		'8' : ('Summer', 1),
+		'9' : ('Fall', 1),
+		'10' : ('Fall', 1),
+		'11' : ('Fall', 1),
+		'12' : ('Winter', 1)
 	}[data]
 
 def ufo_beer_run(dataRDD):
