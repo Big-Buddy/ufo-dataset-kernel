@@ -1,5 +1,6 @@
 import csv
 import sys
+import string
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
 
@@ -52,6 +53,32 @@ def get_season(data):
 def ufo_beer_run(dataRDD):
 
 
+def rank_words(dataRDD):
+	wordRDD = dataRDD.map(lambda x: x['comments'])
+	wordRDD = wordRDD.flatMap(remove_punc_garbage_stopwords)
+	wordRDD = wordRDD.map(lambda x: (x, 1))
+	top_10 = wordRDD.reduceByKey(lambda a,b: a+b).sort(ascending=False).take(10)
+	return top_10
+
+def remove_punc_garbage_stopwords(data):
+	output = data.replace('&amp', ' ')
+	output = output.replace('&#44', ' ')
+	output = output.replace('&#44000', ' ')
+	output = output.replace('&#39', ' ')
+	output = output.replace('&quote;', ' ')
+	output = output.replace('&#8230', ' ')
+	output = output.replace('&#33', ' ')
+	output = output.translate(None, string.punctuation)
+	output = output.split(' ')
+
+	target_buffer = []
+
+	for word in output:
+		if (word not in stopwords):
+			target_buffer.append()
+
+	return target_buffer
+
 if __name__ == "__main__":
     spark = SparkSession\
         .builder\
@@ -60,10 +87,21 @@ if __name__ == "__main__":
 
 data_file = sys.argv[1]
 
+###LOAD STOPWORDS
+global stopwords
+with open("./data/stopwords.txt", 'r') as f:
+	stopwords = f.readlines()
+
 ###READ
 lines = spark.read.text(data_file).rdd
 parts = lines.map(lambda row: row.value.split(","))
 ufoRDD = parts.map(lambda x: Row(datetime=x[0], state=x[2], country=x[3], shape=x[4], duration=x[5], comment=x[7], latitude=x[9], longitude=x[10]))
+
+print(avg_duration(ufoRDD))
+print(hemispheres(ufoRDD))
+print(rank_shapes(ufoRDD))
+print(rank_seasons(ufoRDD))
+print(rank_words(ufoRDD))
 
 ###MAP REDUCE
 	#1 avg duration of sighting
@@ -71,12 +109,14 @@ ufoRDD = parts.map(lambda x: Row(datetime=x[0], state=x[2], country=x[3], shape=
 	#3 shape rankings
 	#4 seasonal rankings
 	#5 alcohol consumption
-###FREQUENT PATTERNS
 	#6 words used in descriptions
 	#7 locations of sightings
-	#8 time of sightings (season, month, day/night)
+	#8 time of sightings (season)
+###FREQUENT PATTERNS
+	#common word patterns
 ###CLUSTERING
 	#9 reliable sightings vs unreliable (look at possible features)
 	#10 cluster coordinates
+	#11 time of sightings (cluster then find range)
 ###MAPS
-	#11 impose lat-lon coordinates on world map?!??!
+	#12 impose lat-lng coordinates on world map?!??!
