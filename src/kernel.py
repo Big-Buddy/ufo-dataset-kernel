@@ -5,7 +5,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 
 def avg_duration(dataRDD):
-	temporalRDD = dataRDD.map(lambda x: ('time_elapsed',x['duration']))
+	temporalRDD = dataRDD.map(lambda x: ('time_elapsed',int(x['duration'])))
 	temporalRDD = temporalRDD.filter(lambda x: x[1])
 	count = temporalRDD.count()
 	sum_durations = temporalRDD.reduceByKey(lambda a,b: a+b).collect()
@@ -51,8 +51,7 @@ def get_season(data):
 	}[data]
 
 def ufo_beer_run(dataRDD):
-
-
+	print()
 def rank_words(dataRDD):
 	wordRDD = dataRDD.map(lambda x: x['comments'])
 	wordRDD = wordRDD.flatMap(remove_punc_garbage_stopwords)
