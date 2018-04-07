@@ -5,11 +5,18 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 
 def avg_duration(dataRDD):
-	temporalRDD = dataRDD.map(lambda x: ('time_elapsed',int(x['duration'])))
+	temporalRDD = dataRDD.map(lambda x: x['duration'])
+	temporalRDD = temporalRDD.map(detect_int_or_float)
 	temporalRDD = temporalRDD.filter(lambda x: x[1])
 	count = temporalRDD.count()
 	sum_durations = temporalRDD.reduceByKey(lambda a,b: a+b).collect()
 	return sum_durations[0][1]/count
+
+def detect_int_or_float(data):
+	try:
+		return ('time elapsed', int(data))
+	except ValueError:
+		return ('time elapsed', float(data))
 
 def hemispheres(dataRDD):
 	geographicalRDD = dataRDD.map(lambda x: (x['latitude'], x['longitude']))
