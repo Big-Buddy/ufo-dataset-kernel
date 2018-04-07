@@ -47,6 +47,7 @@ def rank_seasons(dataRDD):
 	seasonRDD = seasonRDD.map(lambda x: x.split(' '))
 	seasonRDD = seasonRDD.map(lambda x: x[0].split('/'))
 	seasonRDD = seasonRDD.map(lambda x: x[0])
+	seasonRDD = seasonRDD.filter(lambda x: int(x) < 13)
 	seasonRDD = seasonRDD.map(get_season)
 	seasons = seasonRDD.reduceByKey(lambda a,b: a+b).sortBy(lambda x: x[1], ascending=False).collect()
 	return seasons
@@ -70,10 +71,10 @@ def get_season(data):
 def ufo_beer_run(dataRDD):
 	print()
 def rank_words(dataRDD):
-	wordRDD = dataRDD.map(lambda x: x['comments'])
+	wordRDD = dataRDD.map(lambda x: x['comment'])
 	wordRDD = wordRDD.flatMap(remove_punc_garbage_stopwords)
 	wordRDD = wordRDD.map(lambda x: (x, 1))
-	top_10 = wordRDD.reduceByKey(lambda a,b: a+b).sort(ascending=False).take(10)
+	top_10 = wordRDD.reduceByKey(lambda a,b: a+b).sortBy(lambda x: x[1], ascending=False).take(10)
 	return top_10
 
 def remove_punc_garbage_stopwords(data):
@@ -84,14 +85,16 @@ def remove_punc_garbage_stopwords(data):
 	output = output.replace('&quote;', ' ')
 	output = output.replace('&#8230', ' ')
 	output = output.replace('&#33', ' ')
-	output = output.translate(None, string.punctuation)
+
+	translator = str.maketrans('', '', string.punctuation)
+	output = output.translate(translator)
 	output = output.split(' ')
 
 	target_buffer = []
 
 	for word in output:
-		if (word not in stopwords):
-			target_buffer.append()
+		if (word.lower() not in stopwords and not ''):
+			target_buffer.append(word)
 
 	return target_buffer
 
@@ -107,6 +110,7 @@ data_file = sys.argv[1]
 global stopwords
 with open("./data/stopwords.txt", 'r') as f:
 	stopwords = f.readlines()
+	stopwords = [x.strip() for x in stopwords]
 
 ###READ
 lines = spark.read.text(data_file).rdd
