@@ -109,6 +109,14 @@ def cluster_coords(dataRDD):
 	coordRDD = coordRDD.map(detect_float)
 	coordRDD = coordRDD.filter(lambda x: x != 'broken')
 	clusters = KMeans.train(coordRDD, k, maxIterations=100, initializationMode="kmeans||")
+	coordRDD.map(lambda x: "{0} {1} {2}".format(clusters.predict(x), x[0], x[1])).\
+    saveAsTextFile("cluster_coords")
+    write_centroids(clusters.centers, os.path.join("cluster_coords","centroids_final.txt"))
+
+def write_centroids(centroids, file_name):
+	with open(file_name, 'w') as f:
+	    for c in centroids:
+	        f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
 
 if __name__ == "__main__":
     spark = SparkSession\
