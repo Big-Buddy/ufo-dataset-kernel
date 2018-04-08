@@ -1,4 +1,5 @@
 import csv
+import os
 import sys
 import string
 from pyspark.sql import SparkSession
@@ -108,21 +109,6 @@ def cluster_coords(dataRDD):
 	coordRDD = coordRDD.map(detect_float)
 	coordRDD = coordRDD.filter(lambda x: x != 'broken')
 	clusters = KMeans.train(coordRDD, k, maxIterations=100, initializationMode="kmeans||")
-	coordRDD.map(lambda x: "{0} {1} {2}".format(clusters.predict(x), x[0], x[1])).saveAsTextFile("coord_cluster.txt")
-	write_centroids(clusters.centers, os.path.join("coord_cluster.txt","centroids_final.txt"))
-
-	###Within Set Sum of Squared Errors
-	wssse = coordRDD.map(lambda point: error(point)).reduce(lambda x, y: x + y)
-	print("Final cost: " + str(wssse))
-
-def write_centroids(centroids, file_name):
-    with open(file_name, 'w') as f:
-        for c in centroids:
-            f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
-
-def error(point):
-    center = clusters.centers[clusters.predict(point)]
-    return sqrt(sum([x**2 for x in (point - center)]))
 
 if __name__ == "__main__":
     spark = SparkSession\
