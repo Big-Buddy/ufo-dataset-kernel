@@ -3,6 +3,8 @@ import sys
 import string
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
+from pyspark.mllib.clustering import KMeans, KMeansModel
+from math import sqrt
 
 def avg_duration(dataRDD):
 	temporalRDD = dataRDD.map(lambda x: x['duration'])
@@ -98,6 +100,25 @@ def remove_punc_garbage_stopwords(data):
 
 	return target_buffer
 
+def cluster_coords(dataRDD):
+	###CHOOSE K
+	k = 3
+
+	coordRDD = dataRDD.map(lambda x: (x['latitude'], x['longitude']))
+	coordRDD = coordRDD.map(detect_float)
+	clusters = KMeans.train(coordRDD, k, maxIterations=100, initializationMode="kmeans||")
+	coordRDD.map(lambda x: "{0} {1} {2}".format(clusters.predict(x), x[0], x[1])).saveAsTextFile("coord_cluster.txt")
+	write_centroids(clusters.centers, os.path.join("coord_cluster.txt","centroids_final.txt"))
+
+	###Within Set Sum of Squared Errors
+	wssse = clusters.computeCost(coordRDD)
+	print("Final cost: " + str(wsse))
+
+def write_centroids(centroids, file_name):
+    with open(file_name, 'w') as f:
+        for c in centroids:
+            f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
+
 if __name__ == "__main__":
     spark = SparkSession\
         .builder\
@@ -124,21 +145,14 @@ print(hemispheres(ufoRDD))
 print(rank_shapes(ufoRDD))
 print(rank_seasons(ufoRDD))
 print(rank_words(ufoRDD))
+cluster_coords(ufoRDD)
 
 ###MAP REDUCE
-	#1 avg duration of sighting
-	#2 geography
-	#3 shape rankings
-	#4 seasonal rankings
-	#5 alcohol consumption
-	#6 words used in descriptions
-	#7 locations of sightings
-	#8 time of sightings (season)
+	#alcohol consumption
 ###FREQUENT PATTERNS
 	#common word patterns
 ###CLUSTERING
-	#9 reliable sightings vs unreliable (look at possible features)
-	#10 cluster coordinates
-	#11 time of sightings (cluster then find range)
+	#cluster coordinates
+	#time of sightings (cluster then find range)
 ###MAPS
-	#12 impose lat-lng coordinates on world map?!??!
+	#impose lat-lng coordinates on world map?!??!
