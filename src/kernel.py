@@ -111,13 +111,17 @@ def cluster_coords(dataRDD):
 	write_centroids(clusters.centers, os.path.join("coord_cluster.txt","centroids_final.txt"))
 
 	###Within Set Sum of Squared Errors
-	wssse = clusters.computeCost(coordRDD)
+	wssse = points.map(lambda point: error(point)).reduce(lambda x, y: x + y)
 	print("Final cost: " + str(wsse))
 
 def write_centroids(centroids, file_name):
     with open(file_name, 'w') as f:
         for c in centroids:
             f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
+
+def error(point):
+    center = clusters.centers[clusters.predict(point)]
+    return sqrt(sum([x**2 for x in (point - center)]))
 
 if __name__ == "__main__":
     spark = SparkSession\
