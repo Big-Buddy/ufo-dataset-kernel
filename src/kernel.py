@@ -106,13 +106,14 @@ def cluster_coords(dataRDD):
 
 	coordRDD = dataRDD.map(lambda x: (x['latitude'], x['longitude']))
 	coordRDD = coordRDD.map(detect_float)
+	coordRDD = coordRDD.filter(lambda x: x != 'broken')
 	clusters = KMeans.train(coordRDD, k, maxIterations=100, initializationMode="kmeans||")
 	coordRDD.map(lambda x: "{0} {1} {2}".format(clusters.predict(x), x[0], x[1])).saveAsTextFile("coord_cluster.txt")
 	write_centroids(clusters.centers, os.path.join("coord_cluster.txt","centroids_final.txt"))
 
 	###Within Set Sum of Squared Errors
-	wssse = points.map(lambda point: error(point)).reduce(lambda x, y: x + y)
-	print("Final cost: " + str(wsse))
+	wssse = coordRDD.map(lambda point: error(point)).reduce(lambda x, y: x + y)
+	print("Final cost: " + str(wssse))
 
 def write_centroids(centroids, file_name):
     with open(file_name, 'w') as f:
