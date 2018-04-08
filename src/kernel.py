@@ -115,8 +115,8 @@ def cluster_coords(dataRDD):
 
 def write_centroids(centroids, file_name):
 	with open(file_name, 'w') as f:
-	    for c in centroids:
-	        f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
+		for c in centroids:
+			f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
 
 if __name__ == "__main__":
     spark = SparkSession\
