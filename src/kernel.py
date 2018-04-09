@@ -11,9 +11,8 @@ def avg_duration(dataRDD):
 	temporalRDD = dataRDD.map(lambda x: x['duration'])
 	temporalRDD = temporalRDD.map(detect_int_or_float)
 	temporalRDD = temporalRDD.filter(lambda x: x[1] and x[1] != 'broken')
-	count = temporalRDD.count()
-	sum_durations = temporalRDD.reduceByKey(lambda a,b: a+b).collect()
-	return sum_durations[0][1]/count
+	temporalDF = temporalRDD.map(lambda x: Row(duration=x)).toDF()
+	return temporalDF.agg({'duration' : 'avg'})
 
 def detect_int_or_float(data):
 	try:
@@ -129,6 +128,8 @@ def avg_time(dataRDD):
 	timeRDD = timeRDD.map('time', (detect_int))
 	timeRDD = timeRDD.filter(lambda x: x[1] != 'broken')
 	timeRDD = timeRDD.filter(lambda x: x <= 2400)
+	timeDF = timeRDD.map(lambda x: Row(duration=x)).toDF()
+	return timeDF.agg({'duration' : 'avg'})
 
 if __name__ == "__main__":
     spark = SparkSession\
