@@ -6,6 +6,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 from pyspark.mllib.clustering import KMeans, KMeansModel
 from math import sqrt
+from pyspark.mllib.stat import Statistics
 
 def avg_duration(dataRDD):
 	temporalRDD = dataRDD.map(lambda x: x['duration'])
@@ -24,6 +25,18 @@ def detect_int_or_float(data):
 		except ValueError:
 			return ('time elapsed', 'broken')
 
+def detect_int(data):
+	try:
+		return int(data)
+	except ValueError:
+		return 'broken'
+
+def detect_float(data):
+	try:
+		return (float(data[0]), float(data[1]))
+	except ValueError:
+		return ('broken')
+
 def hemispheres(dataRDD):
 	geographicalRDD = dataRDD.map(lambda x: (x['latitude'], x['longitude']))
 	geographicalRDD = geographicalRDD.map(detect_float)
@@ -33,12 +46,6 @@ def hemispheres(dataRDD):
 	no_so = no_soRDD.reduceByKey(lambda a,b: a+b).collect()
 	ea_we = ea_weRDD.reduceByKey(lambda a,b: a+b).collect()
 	return [no_so, ea_we]
-
-def detect_float(data):
-	try:
-		return (float(data[0]), float(data[1]))
-	except ValueError:
-		return ('broken')
 
 def rank_shapes(dataRDD):
 	shapeRDD = dataRDD.map(lambda x: (x['shape'], 1))
@@ -73,6 +80,7 @@ def get_season(data):
 
 def ufo_beer_run(dataRDD):
 	print()
+
 def rank_words(dataRDD):
 	wordRDD = dataRDD.map(lambda x: x['comment'])
 	wordRDD = wordRDD.flatMap(remove_punc_garbage_stopwords)
@@ -117,6 +125,15 @@ def write_centroids(centroids, file_name):
 		for c in centroids:
 			f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
 
+def avg_time(dataRDD):
+	timeRDD = dataRDD.map(lambda x: x['datetime']).map(lambda x: x.split(' ')).map(lambda x: x[1].replace(':', ''))
+	timeRDD = timeRDD.map('time', (detect_int))
+	timeRDD = timeRDD.filter(lambda x: x != 'broken')
+	timeRDD = timeRDD.filter(lambda x: x <= 2400)
+	count = timeRDD.count()
+	summary = Statistics.colStats(timeRDD)
+	return summary.mean()
+
 if __name__ == "__main__":
     spark = SparkSession\
         .builder\
@@ -143,14 +160,12 @@ print(hemispheres(ufoRDD))
 print(rank_shapes(ufoRDD))
 print(rank_seasons(ufoRDD))
 print(rank_words(ufoRDD))
-cluster_coords(ufoRDD)
+#cluster_coords(ufoRDD)
+print(avg_time(ufoRDD))
 
-###MAP REDUCE
-	#alcohol consumption
 ###FREQUENT PATTERNS
 	#common word patterns
 ###CLUSTERING
-	#cluster coordinates
 	#time of sightings (cluster then find range)
 ###MAPS
 	#impose lat-lng coordinates on world map?!??!
