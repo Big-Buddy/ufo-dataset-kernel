@@ -11,7 +11,7 @@ def avg_duration(dataRDD):
 	temporalRDD = dataRDD.map(lambda x: x['duration'])
 	temporalRDD = temporalRDD.map(detect_float)
 	temporalRDD = temporalRDD.filter(lambda x: x and x != 'broken')
-	temporalDF = temporalRDD.map(lambda x: Row(duration=x)).toDF()
+	temporalDF = temporalRDD.map(lambda x: Row(duration=float(x))).toDF()
 	return temporalDF.agg({'duration' : 'avg'})
 
 def detect_int_or_float(data):
