@@ -14,7 +14,7 @@ def avg_duration(dataRDD):
 	temporalRDD = temporalRDD.filter(lambda x: x and x != 'broken')
 	temporalDF = temporalRDD.map(lambda x: Row(duration=x)).toDF()
 	temporalDF.agg(avg(col('duration'))).show()
-	temporalDF.approxQuantile('duration', [0.5], 0.25).show()
+	print(temporalDF.approxQuantile('duration', [0.5], 0.25))
 
 def detect_int_or_float(data):
 	try:
@@ -133,12 +133,12 @@ def write_centroids(centroids, file_name):
 
 def avg_time(dataRDD):
 	timeRDD = dataRDD.map(lambda x: x['datetime']).map(lambda x: x.split(' ')).map(lambda x: x[1].replace(':', ''))
-	timeRDD = timeRDD.map('time', (detect_int))
-	timeRDD = timeRDD.filter(lambda x: x[1] != 'broken')
+	timeRDD = timeRDD.map(detect_int)
+	timeRDD = timeRDD.filter(lambda x: x != 'broken')
 	timeRDD = timeRDD.filter(lambda x: x <= 2400)
-	timeDF = timeRDD.map(lambda x: Row(duration=x)).toDF()
+	timeDF = timeRDD.map(lambda x: Row(time=x)).toDF()
 	timeDF.agg({'duration' : 'avg'}).show()
-	timeDF.approxQuantile('duration', [0.5], 0.25).show()
+	print(timeDF.approxQuantile('duration', [0.5], 0.25))
 
 if __name__ == "__main__":
     spark = SparkSession\
