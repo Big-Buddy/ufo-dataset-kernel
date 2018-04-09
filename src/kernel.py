@@ -6,7 +6,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 from pyspark.mllib.clustering import KMeans, KMeansModel
 from math import sqrt
-from pyspark.mllib.stat import Statistics
 
 def avg_duration(dataRDD):
 	temporalRDD = dataRDD.map(lambda x: x['duration'])
@@ -128,11 +127,8 @@ def write_centroids(centroids, file_name):
 def avg_time(dataRDD):
 	timeRDD = dataRDD.map(lambda x: x['datetime']).map(lambda x: x.split(' ')).map(lambda x: x[1].replace(':', ''))
 	timeRDD = timeRDD.map('time', (detect_int))
-	timeRDD = timeRDD.filter(lambda x: x != 'broken')
+	timeRDD = timeRDD.filter(lambda x: x[1] != 'broken')
 	timeRDD = timeRDD.filter(lambda x: x <= 2400)
-	count = timeRDD.count()
-	summary = Statistics.colStats(timeRDD)
-	return summary.mean()
 
 if __name__ == "__main__":
     spark = SparkSession\
