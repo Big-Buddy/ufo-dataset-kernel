@@ -159,7 +159,7 @@ lines = lines.filter(lambda x: x != header)
 parts = lines.map(lambda row: row.value.split(","))
 ufoRDD = parts.map(lambda x: Row(datetime=x[0], state=x[2], country=x[3], shape=x[4], duration=x[5], comment=x[7], latitude=x[9], longitude=x[10]))
 
-print(avg_duration(ufoRDD))
+avg_duration(ufoRDD)
 print(hemispheres(ufoRDD))
 print(rank_shapes(ufoRDD))
 print(rank_seasons(ufoRDD))
