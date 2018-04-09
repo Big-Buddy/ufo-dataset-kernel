@@ -5,7 +5,7 @@ import string
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
 from pyspark.mllib.clustering import KMeans, KMeansModel
-from pyspark.sql.functions import col, avg
+from pyspark.sql.functions import col, avg, desc
 from pyspark.ml.fpm import FPGrowth
 from math import sqrt
 
@@ -44,10 +44,17 @@ def detect_float(data):
 	except ValueError:
 		return ('broken')
 
+def rank_country(dataRDD):
+	top10_countries = dataRDD.map(lambda x: (x['country'], 1)).filter(lambda x: x[0]).reduceByKey(lambda a,b: a+b).sortBy(lambda x: x[1], ascending=False).take(10)
+	return top10_countries
+	
+
 def hemispheres(dataRDD):
 	geographicalRDD = dataRDD.map(lambda x: (x['latitude'], x['longitude']))
 	geographicalRDD = geographicalRDD.map(detect_float)
 	geographicalRDD = geographicalRDD.filter(lambda x: x != 'broken')
+	coords = geographicalRDD.collect()
+	write_coords(coords, 'coordinates.txt')
 	no_soRDD = geographicalRDD.map(lambda x: ('north', 1) if x[0] >= 0 else ('south', 1))
 	ea_weRDD = geographicalRDD.map(lambda x: ('east', 1) if x[1] >= 0 else ('west', 1))
 	no_so = no_soRDD.reduceByKey(lambda a,b: a+b).collect()
@@ -103,6 +110,7 @@ def remove_punc_garbage_stopwords(data):
 	output = output.replace('&quote;', ' ')
 	output = output.replace('&#8230', ' ')
 	output = output.replace('&#33', ' ')
+	output = output.replace('&quot;', ' ')
 
 	translator = str.maketrans('', '', string.punctuation)
 	output = output.translate(translator)
@@ -112,9 +120,12 @@ def remove_punc_garbage_stopwords(data):
 
 	for word in output:
 		if (word.lower() not in stopwords and not ''):
-			target_buffer.append(word)
+			target_buffer.append(word.lower())
 
 	return target_buffer
+
+def enforce_unique_words(data):
+	return list(set(data))
 
 def cluster_coords(dataRDD):
 	###CHOOSE K
@@ -124,6 +135,11 @@ def cluster_coords(dataRDD):
 	coordRDD = coordRDD.map(detect_float)
 	coordRDD = coordRDD.filter(lambda x: x != 'broken')
 	clusters = KMeans.train(coordRDD, k, maxIterations=100, initializationMode="kmeans||")
+
+	cluster_ind = clusters.predict(coordRDD)
+	cluster_sizes = cluster_ind.countByValue()
+	print(cluster_sizes)
+
 	coordRDD.map(lambda x: "{0} {1} {2}".format(clusters.predict(x), x[0], x[1])).saveAsTextFile("cluster_coords")
 	write_centroids(clusters.centers, os.path.join("cluster_coords","centroids_final.txt"))
 
@@ -143,13 +159,16 @@ def avg_time(dataRDD):
 	print(timeDF.approxQuantile('time', [0.5], 0.25))
 
 def frequent_phrases(dataRDD):
-	wordRDD = dataRDD.map(lambda x: x['comment'])
-	wordDF = wordRDD.map(Row(comment=remove_punc_garbage_stopwords)).toDF()
-	fpGrowth = FPGrowth(itemsCol="comment", minSupport=0.5, minConfidence=0.6)
+	wordRDD = dataRDD.map(lambda x: x['comment']).map(remove_punc_garbage_stopwords).map(enforce_unique_words)
+	wordDF = wordRDD.map(lambda x: Row(comment=x)).toDF()
+	fpGrowth = FPGrowth(itemsCol="comment", minSupport=0.025, minConfidence=0.1)
 	model = fpGrowth.fit(wordDF)
-	model.freqItemsets.show()
-	model.associationRules.show()
-	model.transform(wordDF).show()
+	model.freqItemsets.orderBy(desc('freq')).show()
+
+def write_coords(coords, file_name):
+	with open(file_name, 'w') as f:
+		for c in coords:
+			f.write("{0} {1}\n".format(str(c[0]), str(c[1])))
 
 if __name__ == "__main__":
     spark = SparkSession\
@@ -172,13 +191,15 @@ lines = lines.filter(lambda x: x != header)
 parts = lines.map(lambda row: row.value.split(","))
 ufoRDD = parts.map(lambda x: Row(datetime=x[0], state=x[2], country=x[3], shape=x[4], duration=x[5], comment=x[7], latitude=x[9], longitude=x[10]))
 
-avg_duration(ufoRDD)
-print(hemispheres(ufoRDD))
-print(rank_shapes(ufoRDD))
-print(rank_seasons(ufoRDD))
-print(rank_words(ufoRDD))
-#cluster_coords(ufoRDD)
-avg_time(ufoRDD)
+#avg_duration(ufoRDD)
+#print(hemispheres(ufoRDD))
+#print(rank_shapes(ufoRDD))
+#print(rank_seasons(ufoRDD))
+#print(rank_words(ufoRDD))
+cluster_coords(ufoRDD)
+#avg_time(ufoRDD)
+#frequent_phrases(ufoRDD)
+#print(rank_country(ufoRDD))
 
 ###MAPS
 	#impose lat-lng coordinates on world map?!??!
