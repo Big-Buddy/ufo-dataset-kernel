@@ -137,8 +137,8 @@ def avg_time(dataRDD):
 	timeRDD = timeRDD.filter(lambda x: x != 'broken')
 	timeRDD = timeRDD.filter(lambda x: x <= 2400)
 	timeDF = timeRDD.map(lambda x: Row(time=x)).toDF()
-	timeDF.agg({'duration' : 'avg'}).show()
-	print(timeDF.approxQuantile('duration', [0.5], 0.25))
+	timeDF.agg({'time' : 'avg'}).show()
+	print(timeDF.approxQuantile('time', [0.5], 0.25))
 
 if __name__ == "__main__":
     spark = SparkSession\
