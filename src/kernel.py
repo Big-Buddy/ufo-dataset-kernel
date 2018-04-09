@@ -9,7 +9,7 @@ from math import sqrt
 
 def avg_duration(dataRDD):
 	temporalRDD = dataRDD.map(lambda x: x['duration'])
-	temporalRDD = temporalRDD.map(detect_float)
+	temporalRDD = temporalRDD.map(detect_single_float)
 	temporalRDD = temporalRDD.filter(lambda x: x and x != 'broken')
 	temporalDF = temporalRDD.map(lambda x: Row(duration=float(x))).toDF()
 	return temporalDF.agg({'duration' : 'avg'})
@@ -28,6 +28,12 @@ def detect_int(data):
 		return int(data)
 	except ValueError:
 		return 'broken'
+
+def detect_single_float(data):
+	try:
+		return float(data)
+	except ValueError:
+		return ('broken')
 
 def detect_float(data):
 	try:
