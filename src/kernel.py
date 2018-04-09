@@ -9,19 +9,19 @@ from math import sqrt
 
 def avg_duration(dataRDD):
 	temporalRDD = dataRDD.map(lambda x: x['duration'])
-	temporalRDD = temporalRDD.map(detect_int_or_float)
-	temporalRDD = temporalRDD.filter(lambda x: x[1] and x[1] != 'broken')
+	temporalRDD = temporalRDD.map(detect_float)
+	temporalRDD = temporalRDD.filter(lambda x: x and x != 'broken')
 	temporalDF = temporalRDD.map(lambda x: Row(duration=x)).toDF()
 	return temporalDF.agg({'duration' : 'avg'})
 
 def detect_int_or_float(data):
 	try:
-		return ('time elapsed', int(data))
+		return (int(data))
 	except ValueError:
 		try:
-			return ('time elapsed', float(data))
+			return (float(data))
 		except ValueError:
-			return ('time elapsed', 'broken')
+			return ('broken')
 
 def detect_int(data):
 	try:
