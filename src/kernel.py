@@ -14,6 +14,7 @@ def avg_duration(dataRDD):
 	temporalRDD = temporalRDD.filter(lambda x: x and x != 'broken')
 	temporalDF = temporalRDD.map(lambda x: Row(duration=x)).toDF()
 	temporalDF.agg(avg(col('duration'))).show()
+	temporalDF.approxQuantile('duration', [0.5], 0.25).show()
 
 def detect_int_or_float(data):
 	try:
@@ -136,7 +137,8 @@ def avg_time(dataRDD):
 	timeRDD = timeRDD.filter(lambda x: x[1] != 'broken')
 	timeRDD = timeRDD.filter(lambda x: x <= 2400)
 	timeDF = timeRDD.map(lambda x: Row(duration=x)).toDF()
-	return timeDF.agg({'duration' : 'avg'})
+	timeDF.agg({'duration' : 'avg'}).show()
+	timeDF.approxQuantile('duration', [0.5], 0.25).show()
 
 if __name__ == "__main__":
     spark = SparkSession\
@@ -165,7 +167,7 @@ print(rank_shapes(ufoRDD))
 print(rank_seasons(ufoRDD))
 print(rank_words(ufoRDD))
 #cluster_coords(ufoRDD)
-print(avg_time(ufoRDD))
+avg_time(ufoRDD)
 
 ###FREQUENT PATTERNS
 	#common word patterns
