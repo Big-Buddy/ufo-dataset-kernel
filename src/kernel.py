@@ -133,7 +133,7 @@ def write_centroids(centroids, file_name):
 
 def avg_time(dataRDD):
 	timeRDD = dataRDD.map(lambda x: x['datetime']).map(lambda x: x.split(' '))
-	timeRDD = timeRDD.filter(lambda x: x[1]).map(lambda x: x[1].replace(':', ''))
+	timeRDD = timeRDD.filter(lambda x: len(x) > 1).map(lambda x: x[1].replace(':', ''))
 	timeRDD = timeRDD.map(detect_int)
 	timeRDD = timeRDD.filter(lambda x: x != 'broken')
 	timeRDD = timeRDD.filter(lambda x: x <= 2400)
