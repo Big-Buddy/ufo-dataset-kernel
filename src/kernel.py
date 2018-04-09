@@ -6,6 +6,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 from pyspark.mllib.clustering import KMeans, KMeansModel
 from pyspark.sql.functions import col, avg
+from pyspark.ml.fpm import FPGrowth
 from math import sqrt
 
 def avg_duration(dataRDD):
@@ -141,6 +142,15 @@ def avg_time(dataRDD):
 	timeDF.agg({'time' : 'avg'}).show()
 	print(timeDF.approxQuantile('time', [0.5], 0.25))
 
+def frequent_phrases(dataRDD):
+	wordRDD = dataRDD.map(lambda x: x['comment'])
+	wordDF = wordRDD.map(Row(comment=remove_punc_garbage_stopwords)).toDF()
+	fpGrowth = FPGrowth(itemsCol="comment", minSupport=0.5, minConfidence=0.6)
+	model = fpGrowth.fit(wordDF)
+	model.freqItemsets.show()
+	model.associationRules.show()
+	model.transform(wordDF).show()
+
 if __name__ == "__main__":
     spark = SparkSession\
         .builder\
@@ -170,9 +180,5 @@ print(rank_words(ufoRDD))
 #cluster_coords(ufoRDD)
 avg_time(ufoRDD)
 
-###FREQUENT PATTERNS
-	#common word patterns
-###CLUSTERING
-	#time of sightings (cluster then find range)
 ###MAPS
 	#impose lat-lng coordinates on world map?!??!
